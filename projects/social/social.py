@@ -1,3 +1,6 @@
+from random import sample as sample
+from itertools import combinations
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -42,11 +45,25 @@ class SocialGraph:
         self.last_id = 0
         self.users = {}
         self.friendships = {}
+        user_list = []
         # !!!! IMPLEMENT ME
-
+        if num_users < avg_friendships:
+            return "Error: number of users must be greater than the average number of friendships"
         # Add users
+        for n in range(num_users):
+            self.add_user(n+1)
+            user_list.append(n+1)
 
         # Create friendships
+        need = num_users * avg_friendships
+        comb = combinations(user_list, 2)
+        comb = list(comb)
+        friends = sample(comb, need)
+
+        for i in range(len(friends)):
+            # print([friends[i][0], friends[i][1]])
+            self.add_friendship(friends[i][0], friends[i][1])
+
 
     def get_all_social_paths(self, user_id):
         """
@@ -66,5 +83,5 @@ if __name__ == '__main__':
     sg = SocialGraph()
     sg.populate_graph(10, 2)
     print(sg.friendships)
-    connections = sg.get_all_social_paths(1)
-    print(connections)
+    # connections = sg.get_all_social_paths(1)
+    # print(connections)

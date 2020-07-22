@@ -2,6 +2,7 @@ from room import Room
 from player import Player
 from world import World
 
+
 import random
 from ast import literal_eval
 
@@ -13,8 +14,8 @@ world = World()
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
-map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+# map_file = "maps/test_loop_fork.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -25,228 +26,68 @@ world.print_rooms()
 
 player = Player(world.starting_room)
 
-class Stack():
-    def __init__(self):
-        self.stack = []
-    def push(self, value):
-        self.stack.append(value)
-    def pop(self):
-        if self.size() > 0:
-            return self.stack.pop()
-        else:
-            return None
-    def size(self):
-        return len(self.stack)
-
-class Queue():
-    def __init__(self):
-        self.queue = []
-    def enqueue(self, value):
-        self.queue.append(value)
-    def dequeue(self):
-        if self.size() > 0:
-            return self.queue.pop(0)
-        else:
-            return None
-    def size(self):
-        return len(self.queue)
-
-def inverse(d):
-    # n, e, s, w
-
-    if d == 'n':
-        return 's'
-    elif d == 'e':
-        return 'w'
-    elif d == 's':
-        return 'n'
-    else:
-        return 'e'
-
-def bft(start):
-    """
-    Takes the starting room, and finds the nearest room with a ? in 
-    the directions dict.
-    Returns the path to the nearest room with a ? in the directions.
-    """
-    q = Queue()
-
-    local = {}  # Note that this is a dictionary, not a set
-
-    q.enqueue([start])
-
-    global visited
-
-    found = False
-
-    while found == False:
-        path = q.dequeue()
-
-        u = path[-1]
-
-        if u not in local:
-            local[u] = path
-
-            for key, val in visited[u].items():
-                path_copy = list(path)
-                path_copy.append(val)
-                q.enqueue(path_copy)
-                if val == '?':
-                    direction = key
-                    destination = u
-                    return local[u], direction
-
-
-
-    # return local
-
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
 traversal_path = []
-
 visited = {}
 
-# s = Stack()
 
-# s.push(player.current_room.id)
+exit_path = []
 
+inverse_direction = {"n":"s", "e":"w", "s":"n", "w":"e"}
 
-# visited[player.current_room.id] = {}
+visited[player.current_room.id] = player.current_room.get_exits()
 
-# create empty visited dict
-# create stack
-# add current room to stack
-# while loop:
-    # remove top item from stack
-    # if current not in visited, add it, and for loop through exits to add to available options for that room in visited
-    # add first unused option to directions
-    # add opposite direction to out
-    # move in the direction of the first option
-v = player.current_room.id
-counter = 0
-test = True
-direction = None
-lastroom = None
-lastmove = None
-# while len(visited) < len(room_graph):
-# while test == True:
-while counter < 30:
+#figure out loop for visited list vs list of 500 rooms
+while len(visited) < len(room_graph):
+    # in a new rom:
+        # add room and directions to visited
+        # then remove the direction you came from
+    if player.current_room.id not in visited:  
+        visited[player.current_room.id] = player.current_room.get_exits() 
+        direction = exit_path[-1]
+        visited[player.current_room.id].remove(direction)
 
-    # if previous != None:
-    #     visited[player.current_room.id][inverse(direction)] = previous
-    #     print('ran previous')
-
-    counter += 1
-    print('\n\ncount:', counter, '\n')
-
-    # v = s.pop()
-    print('\nv!!!!!:', v)
-
-    if v not in visited.keys():
-        visited[player.current_room.id] = {}
-
-        for d in player.current_room.get_exits():
-            visited[player.current_room.id][d] = '?'
-
-        for nesw, room in visited[player.current_room.id].items():
-            if room == '?':
-                if direction == inverse(nesw):
-                    pass
-                else:
-                    direction = nesw
-                    traversal_path.append(direction)
-                    # out.append(inverse(direction))
-                    previous = player.current_room.id
-                    # print(previous)
-                    player.travel(direction)
-                    # s.push(player.current_room.id)
-                    v = player.current_room.id
-                    current = player.current_room.id
-                    visited[previous][direction] = player.current_room.id
-                    # visited[current][inverse(direction)] = previous
-                    print('\nno v', '\nvisited:', visited, '\ncurrent:', current, '\nv:', v)  #, '\ntraversal path:', traversal_path)
-                    break
+    # in a room with exhausted directions:
+        # go back in the direction you came from
+        # remove the exit_path step you just took
+    if len(visited[player.current_room.id]) == 0:
+        direction = exit_path.pop()
+        traversal_path.append(direction)
+        player.travel(direction)
 
     else:
-        if '?' not in visited[current].values():
-            print('bft current:', current)
-            path, direction = bft(current)
-            # print('no ?', path, direction)
-            for i in range(len(path)):
-                for nesw, room in visited[i].items():
-                    if room == i:
-                        print(' loop 1')
-                        previous = player.current_room.id
-                        player.travel(nesw)
-                        traversal_path.append(nesw)
-                        visited[previous][nesw] = player.current_room.id
-                        current = v = player.current_room.id
-            player.travel(direction)
-            traversal_path.append(direction)
-            current = v = player.current_room.id
-            for nesw, room in visited[current].items():
-                if room == '?':
-                    previous = player.current_room.id
-                    player.travel(nesw)
-                    traversal_path.append(nesw)
-                    visited[previous][nesw] = player.current_room.id
-                    current = v = player.current_room.id
-                    print(' loop 2')
-                    break
-            print('\nno ?', '\nvisited:', visited, '\ncurrent:', current, '\nv:', v) 
-        else:
-            # print('? loop')
-            for nesw, room in visited[current].items():
-                if room == '?':
-                    previous = player.current_room.id
-                    direction = nesw
-                    player.travel(nesw)
-                    traversal_path.append(nesw)
-                    visited[previous][nesw] = player.current_room.id
-                    current = v = player.current_room.id
-                    break
-            print('\n? loop', '\nvisited:', visited, '\ncurrent:', current, '\nv:', v) 
+    # in a room with unexplored directions:
+        # head in an unexplored direction
+        # remove the direction you will go from the room
+        # update traversal_path
+        # update exit_path
+        direction = visited[player.current_room.id].pop()
+        traversal_path.append(direction)
+        exit_path.append(inverse_direction[direction])
+        player.travel(direction)
 
+#figure out what to do when you hit a deadend. a room where all paths have been discovered.
+#backtrack until you encounter a room with paths that have not been discovered
 
-        # print('\n\ncurrent:', player.current_room.id, '\ndirection:', direction) #, '\ntraversal_path:', traversal_path)
-    if lastmove == None:
-        lastmove = direction
-        lastroom = previous
-    else:
-        print('\nlast move:', lastmove, 'lastroom:', lastroom)
-        visited[previous][inverse(lastmove)] = lastroom
-        lastmove = direction
-        lastroom = previous
-        print('direction:', direction, 'previous:', previous)
-
-        test = False
-
-
-print(visited)
-print(current)
-##############################################
-# notes
-##############################################
-# player.current_room.id  => 0
-
-# player.current_room.get_exits() => ['n', 's', 'e', 'w']
-
-# player.travel(direction)
 
 # TRAVERSAL TEST
-visited_rooms = set()
+visited = set()
 player.current_room = world.starting_room
-visited_rooms.add(player.current_room)
+visited.add(player.current_room)
+
+# get the first room and exits added to the visited
+#
 
 for move in traversal_path:
     player.travel(move)
-    visited_rooms.add(player.current_room)
+    visited.add(player.current_room)
 
-if len(visited_rooms) == len(room_graph):
-    print(f"TESTS PASSED: {len(traversal_path)} moves, {len(visited_rooms)} rooms visited")
+if len(visited) == len(room_graph):
+    print(f"TESTS PASSED: {len(traversal_path)} moves, {len(visited)} rooms visited")
 else:
     print("TESTS FAILED: INCOMPLETE TRAVERSAL")
-    print(f"{len(room_graph) - len(visited_rooms)} unvisited rooms")
+    print(f"{len(room_graph) - len(visited)} unvisited rooms")
 
 
 
